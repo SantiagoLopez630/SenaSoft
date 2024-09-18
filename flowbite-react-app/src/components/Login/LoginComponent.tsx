@@ -2,11 +2,12 @@
 
 import { Button } from "flowbite-react";
 import React, { useState } from "react";
-import axios from 'axios'; // Asegúrate de instalar axios si aún no lo has hecho
-import { navigate } from "gatsby"; // Importa la función navigate de Gatsby
+import axios from 'axios'; 
+import { navigate } from "gatsby"; 
+import Cookies from 'js-cookie'; 
 
 export function LoginComponent() {
-  const [docNumber, setDocNumber] = useState(""); // Número de documento
+  const [docNumber, setDocNumber] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -15,32 +16,40 @@ export function LoginComponent() {
     e.preventDefault();
     setLoading(true);
     setError("");
-
+  
     try {
-      const response = await axios.post("http://10.190.145.8:3000/login_paciente/", {
-        nro_doc: docNumber, // Enviamos el número de documento
+      const response = await axios.post("http://127.0.0.1:8000/login_paciente/", {
+        nro_doc: docNumber,
         contrasena: password
       });
-
-      // Manejar el inicio de sesión exitoso
+  
+      console.log("Respuesta del servidor completa:", response);
       console.log("Inicio de sesión exitoso:", response.data);
-
-      // Redirigir al usuario a la página 'homePaciente'
+      Cookies.set('user_id', response.data.id, { expires: 1 });
+      Cookies.set('user_role', response.data.rol, { expires: 1 });
+  
       navigate("/homePaciente");
-
-    } catch (error: any) {
-      if (axios.isAxiosError(error) && error.response) {
-        // Mostrar errores específicos de la API
-        const apiErrors = error.response.data;
-        if (apiErrors.nro_doc) {
-          setError(apiErrors.nro_doc.join(' '));
-        } else if (apiErrors.contrasena) {
-          setError(apiErrors.contrasena.join(' '));
+  
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        console.log("Error capturado:", error);
+  
+        if (error.response) {
+          const apiErrors = error.response.data;
+          console.log("Errores específicos de la API:", apiErrors);
+          if (apiErrors.nro_doc) {
+            setError(apiErrors.nro_doc.join(' '));
+          } else if (apiErrors.contrasena) {
+            setError(apiErrors.contrasena.join(' '));
+          } else {
+            setError("Error del servidor");
+          }
         } else {
-          setError("Error del servidor");
+          setError("Error de red o del servidor");
         }
       } else {
-        setError("Error de red o del servidor");
+        console.error("Error inesperado:", error);
+        setError("Error inesperado");
       }
     } finally {
       setLoading(false);
@@ -58,7 +67,7 @@ export function LoginComponent() {
             Número de documento
           </label>
           <input
-            type="text" // Cambié el tipo a 'text' ya que es un número de documento
+            type="text"
             id="docNumber"
             value={docNumber}
             onChange={(e) => setDocNumber(e.target.value)}
@@ -82,7 +91,7 @@ export function LoginComponent() {
             required
           />
         </div>
-        {error && <div className="text-red-500 mb-4">{error}</div>}
+        {error && <div className="mb-4 text-red-500">{error}</div>}
         <button
           type="submit"
           disabled={loading}
