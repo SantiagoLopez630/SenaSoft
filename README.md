@@ -70,7 +70,7 @@ Este proyecto es una aplicación para la gestión de una clínica odontológica,
 
 ## Uso
 
-Una vez que la aplicación esté en funcionamiento, puedes acceder al frontend a través de \`http://localhost:8000\` y al backend a través de \`http://localhost:8000/api/\` (o los puertos que hayas configurado).
+Una vez que la aplicación esté en funcionamiento, puedes acceder al frontend a través de \`http://localhost:3000\` y al backend a través de \`http://localhost:8000/api/\` (o los puertos que hayas configurado).
 
 ## Contribuciones
 
