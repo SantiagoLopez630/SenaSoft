@@ -1,7 +1,7 @@
-"use client"; 
+"use client";
 
 import { Button } from "flowbite-react";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from 'axios'; 
 import { navigate } from "gatsby"; 
 import Cookies from 'js-cookie'; 
@@ -12,44 +12,53 @@ export function LoginComponent() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Efecto para redirigir si ya está autenticado
+  useEffect(() => {
+    const isAuthenticated = Cookies.get('isAuthenticated');
+    if (isAuthenticated === 'true') {
+      navigate("/homePaciente");
+    }
+  }, []);  // Se ejecuta una sola vez al montar el componente
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
-  
+
     try {
       const response = await axios.post("http://127.0.0.1:8000/login_paciente/", {
         nro_doc: docNumber,
-        contrasena: password
+        contrasena: password,
       });
-  
-      console.log("Respuesta del servidor completa:", response);
+
       console.log("Inicio de sesión exitoso:", response.data);
-      Cookies.set('user_id', response.data.id, { expires: 1 });
-      Cookies.set('user_role', response.data.rol, { expires: 1 });
-  
+
+      // Guardar el estado de autenticación en las cookies
+      Cookies.set("isAuthenticated", "true", { expires: 1 });
+      Cookies.set("user_id", response.data.id, { expires: 1 });
+      Cookies.set("user_role", response.data.rol, { expires: 1 });
+
       navigate("/homePaciente");
-  
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        console.log("Error capturado:", error);
-  
         if (error.response) {
-          const apiErrors = error.response.data;
-          console.log("Errores específicos de la API:", apiErrors);
-          if (apiErrors.nro_doc) {
-            setError(apiErrors.nro_doc.join(' '));
-          } else if (apiErrors.contrasena) {
-            setError(apiErrors.contrasena.join(' '));
+          const status = error.response.status;
+
+          // Manejar errores según el estado HTTP
+          if (status === 401) {
+            setError("Credenciales incorrectas. Inténtalo de nuevo.");
+          } else if (status === 400) {
+            setError("Por favor, verifica los datos ingresados.");
+          } else if (status === 500) {
+            setError("Error en el servidor. Por favor, inténtalo más tarde.");
           } else {
-            setError("Error del servidor");
+            setError("Ocurrió un error inesperado.");
           }
         } else {
-          setError("Error de red o del servidor");
+          setError("Error de red o del servidor.");
         }
       } else {
-        console.error("Error inesperado:", error);
-        setError("Error inesperado");
+        setError("Error inesperado.");
       }
     } finally {
       setLoading(false);
