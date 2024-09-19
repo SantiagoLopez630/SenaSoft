@@ -4,25 +4,24 @@ import { Avatar, Dropdown, Navbar, DarkThemeToggle } from "flowbite-react";
 import React, { useEffect, useState } from "react";
 import { ClearCookiesButton } from "../ClearCookiesButton";
 import axios from "axios";
+import { Link } from "gatsby";
 import Cookies from "js-cookie";
 
 export function NavbarPaciente() {
-  // Estados para almacenar la información del paciente
   const [paciente, setPaciente] = useState({
     nom: "Cargando...",
     ape: "",
     nro_doc: "Cargando...",
   });
 
-  // Función para obtener el user_id de la cookie y hacer la solicitud a la API
   useEffect(() => {
-    const userId = Cookies.get("user_id"); // Obtiene el user_id de la cookie
+    const userId = Cookies.get("user_id");
 
     if (userId) {
       axios
         .get(`http://127.0.0.1:8000/pacientes/${userId}/`)
         .then((response) => {
-          setPaciente(response.data); // Guarda los datos en el estado
+          setPaciente(response.data);
         })
         .catch((error) => {
           console.error("Error al obtener los datos del paciente", error);
@@ -67,7 +66,9 @@ export function NavbarPaciente() {
           <Dropdown.Item>Earnings</Dropdown.Item>
           <Dropdown.Divider />
           <Dropdown.Item>
-            <strong><ClearCookiesButton /></strong>
+            <strong>
+              <ClearCookiesButton />
+            </strong>
           </Dropdown.Item>
         </Dropdown>
         <Navbar.Toggle />
@@ -77,10 +78,12 @@ export function NavbarPaciente() {
       </div>
 
       <Navbar.Collapse>
-        <Navbar.Link href="#" active>
+        <Navbar.Link as={Link} to="/homePaciente">
           Inicio
         </Navbar.Link>
-        <Navbar.Link href="#">Pide tu cita</Navbar.Link>
+        <Navbar.Link as={Link} to="/asignacionCita">
+          Asignación de Citas
+        </Navbar.Link>
         <Navbar.Link href="#">Servicios</Navbar.Link>
         <Navbar.Link href="#">Contacto</Navbar.Link>
       </Navbar.Collapse>

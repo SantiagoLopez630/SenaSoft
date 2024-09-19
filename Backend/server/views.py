@@ -10,6 +10,7 @@ from django.db.models import Count, F
 from rest_framework.views import APIView
 from .serializers import EmployeeSerializer, PacienteSerializer
 from .utils import authenticatePac, authenticateEmple
+from django.utils import timezone
 # Vista de pruebas
 class EmployeeViewSet(viewsets.ModelViewSet):
     queryset = Employee.objects.all()
@@ -88,9 +89,9 @@ class CitaViewSet(viewsets.ModelViewSet):
             for cita in citas:
                 paciente = cita.id_pac
                 data.append({
-                    'paciente_doc': paciente.nro_doc,
-                    'paciente_nombre': paciente.nom,
-                    'paciente_apellido': paciente.ape,
+                    'doc': paciente.nro_doc,
+                    'nombre': paciente.nom,
+                    'apellido': paciente.ape,
                     'fecha_cita': cita.fecha_cita,
                     'hora_cita': cita.hora_cita,
                 })
@@ -141,6 +142,7 @@ class CitaViewSet(viewsets.ModelViewSet):
                 hora_actual += timedelta(minutes=20)
 
             data.append({
+                'id_odont': odontologo.id_odont,
                 'doctor': odontologo.nom,
                 'fecha': fecha_str,
                 'intervalos_disponibles': intervalos_disponibles
@@ -197,27 +199,47 @@ class PacienteViewSet(viewsets.ModelViewSet):
 
             if paciente:
                 data = {
-                    'paciente_nombre': paciente.nom,
+                    'nombre': paciente.nom,
                     'citas': []
                 }
+
+                # Recorremos todas las citas del paciente
                 for cita in paciente.cita_set.all():
-                    historia = cita.historiaodontologica_set.all()
-                    citas_data = {
-                        'fecha_cita': cita.fecha_cita,
-                        'historia': [
-                            {
-                                'resultado_serv': servicio.resultado_serv,
-                                'observaciones': servicio.observaciones,
-                                'servicio': servicio.id_serv.nom_serv
-                            }
-                            for historia in historia
-                            for servicio in historia.serviciohistoria_set.all()
-                        ]
-                    }
-                    data['citas'].append(citas_data)
+                    # Asumimos que hay solo una historia por cita
+                    historia = cita.historiaodontologica_set.first()
+                    
+                    if historia:
+                        # Estructura para los procedimientos dentro de la historia
+                        historia_data = {
+                            'id_hist': historia.id_hist,
+                            'fecha_hist': historia.fecha_hist,
+                            'motivo_consulta': historia.motivo_consulta,
+                            'diagnostico': historia.diagnostico,
+                            'recomendaciones': historia.recomendaciones,
+                            'observaciones': historia.observaciones,
+                            'procedimientos': [
+                                {
+                                    'id': servicio.id,
+                                    'resultado_serv': servicio.resultado_serv,
+                                    'observaciones': servicio.observaciones,
+                                    'fecha_serv_hist': servicio.fecha_serv_hist,
+                                    'servicio': servicio.id_serv.nom_serv,
+                                }
+                                for servicio in historia.serviciohistoria_set.all()
+                            ]
+                        }
+
+                        # Estructura para la cita con su historia asociada
+                        citas_data = {
+                            'fecha_cita': cita.fecha_cita,
+                            'historia': historia_data
+                        }
+
+                        data['citas'].append(citas_data)
+
                 return Response(data)
-            else:
-                return Response({'error': 'Paciente no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+
+            return Response({'error': 'Paciente no encontrado'}, status=status.HTTP_404_NOT_FOUND)
         else:
             return Response({'error': 'Número de documento no proporcionado'}, status=status.HTTP_400_BAD_REQUEST)
     
@@ -256,12 +278,46 @@ class PacienteViewSet(viewsets.ModelViewSet):
             total += subtotal
             servicios_data.append(servicio_data)
 
-        # Devuelve los servicios y el total
         return Response({
             'servicios': servicios_data,
             'total': total
         }, status=status.HTTP_200_OK)
-
+        
+    @action(detail=False, methods=['get'], url_path='citas_pendientes')
+    def citas_pendientes(self, request):
+        id = request.query_params.get('id')
+        
+        if not id:
+            return Response({'error': 'ID del paciente no proporcionado'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            paciente = Paciente.objects.get(id_pac=id)
+        except Paciente.DoesNotExist:
+            return Response({'error': 'Paciente no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Obtener la fecha actual
+        fecha_actual = timezone.now().date()
+        
+        # Filtrar citas cuya fecha sea mayor o igual a la actual
+        citas_pendientes = Cita.objects.filter(id_pac=paciente, fecha_cita__gte=fecha_actual)
+        
+        if not citas_pendientes.exists():
+            return Response({'mensaje': 'No hay citas pendientes'}, status=status.HTTP_200_OK)
+        
+        citas_data = []
+        for cita in citas_pendientes:
+            citas_data.append({
+                'id_cita': cita.id_cita,
+                'fecha_cita': cita.fecha_cita,
+                'hora_cita': cita.hora_cita,
+                'tipo_cita': cita.tipo_cita,
+                'id_serv': cita.id_serv.nom_serv,
+            })
+        
+        return Response({
+            'nombre': paciente.nom,
+            'citas_pendientes': citas_data
+        }, status=status.HTTP_200_OK)
     
             
 class PacienteSeguroViewSet(viewsets.ModelViewSet):

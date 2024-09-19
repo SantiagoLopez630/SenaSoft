@@ -21,15 +21,21 @@ class Cita(models.Model):
     id_cita = models.AutoField(primary_key=True)
     id_pac = models.ForeignKey('Paciente', on_delete=models.CASCADE, db_column='id_pac')
     id_odont = models.ForeignKey('Odontologo', on_delete=models.CASCADE, db_column='id_odont')
-    id_emp = models.ForeignKey('Empleado', on_delete=models.CASCADE, db_column='id_emp',blank=True, null=True)
+    id_emp = models.ForeignKey('Empleado', on_delete=models.CASCADE, db_column='id_emp', blank=True, null=True)
     tipo_cita = models.CharField(max_length=50)
     fecha_cita = models.DateField()
     hora_cita = models.TimeField()
     est_cita = models.BooleanField()
     id_serv = models.ForeignKey('ServicioOdontologico', on_delete=models.CASCADE, db_column='id_serv')
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['fecha_cita', 'hora_cita'], name='unique_fecha_hora_cita')
+        ]
+
     def __str__(self):
         return f"Cita {self.id_cita} - {self.fecha_cita} {self.hora_cita}"
+
 
 
 
@@ -257,7 +263,8 @@ class ServerRol(models.Model):
 
 
 class ServicioHistoria(models.Model):
-    id_serv = models.OneToOneField('ServicioOdontologico', on_delete=models.CASCADE, db_column='id_serv', primary_key=True)  # The composite primary key (id_serv, id_hist) found, that is not supported. The first column is selected.
+    id = models.BigAutoField(primary_key=True)
+    id_serv = models.ForeignKey('ServicioOdontologico', on_delete=models.CASCADE, db_column='id_serv')
     id_hist = models.ForeignKey(HistoriaOdontologica, on_delete=models.CASCADE, db_column='id_hist')
     resultado_serv = models.TextField()
     observaciones = models.TextField()

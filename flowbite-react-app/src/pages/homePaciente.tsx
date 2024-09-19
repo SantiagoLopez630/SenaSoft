@@ -1,43 +1,154 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { HeadFC, Link, PageProps, navigate } from "gatsby";
 import { NavbarPaciente } from "../components/Navbar/NavbarPaciente";
 import { FooterComponent } from "../components/FooterComponent";
 import { HiArrowNarrowRight, HiCalendar } from "react-icons/hi";
-import { Button, Card, Timeline } from "flowbite-react";
+import { Button, Card, Timeline, Modal, Alert } from "flowbite-react"; // Import Alert
 import Cookies from "js-cookie";
+import axios from "axios";
 
 const HomePacientePage: React.FC<PageProps> = () => {
-  
+  const [paciente, setPaciente] = useState({
+    nom: "Cargando...",
+    ape: "",
+    nro_doc: "Cargando...",
+  });
+
+  const [historial, setHistorial] = useState([]);
+  const [citasPendientes, setCitasPendientes] = useState<any[]>([]);
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedCita, setSelectedCita] = useState<any>(null);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+
   useEffect(() => {
-    const isAuthenticated = Cookies.get('isAuthenticated');
-    const userRole = Cookies.get('user_role');
-    
-    if (!isAuthenticated || userRole !== 'Paciente') {
-      navigate('/login');
+    const userId = Cookies.get("user_id");
+
+    if (userId) {
+      axios
+        .get(`http://127.0.0.1:8000/pacientes/${userId}/`)
+        .then((response) => {
+          setPaciente(response.data);
+        })
+        .catch((error) => {
+          console.error("Error al obtener los datos del paciente", error);
+        });
     }
   }, []);
+
+  useEffect(() => {
+    const isAuthenticated = Cookies.get("isAuthenticated");
+    const userRole = Cookies.get("user_role");
+
+    if (!isAuthenticated || userRole !== "Paciente") {
+      navigate("/login");
+    }
+  }, []);
+
+  useEffect(() => {
+    if (paciente.nro_doc !== "Cargando...") {
+      axios
+        .get(
+          `http://127.0.0.1:8000/pacientes/historial_paciente/?nro_documento=${paciente.nro_doc}`,
+        )
+        .then((response) => {
+          setHistorial(response.data.citas.slice(0, 3)); // Mostrar solo 3 citas
+        })
+        .catch((error) => {
+          console.error("Error al obtener el historial del paciente", error);
+        });
+    }
+  }, [paciente.nro_doc]);
+
+  useEffect(() => {
+    const userId = Cookies.get("user_id");
+
+    if (userId) {
+      axios
+        .get(`http://127.0.0.1:8000/pacientes/citas_pendientes/?id=${userId}`)
+        .then((response) => {
+          if (response.data.mensaje) {
+            setCitasPendientes([]);
+          } else {
+            setCitasPendientes(response.data.citas_pendientes);
+          }
+        })
+        .catch((error) => {
+          console.error("Error al obtener las citas pendientes", error);
+        });
+    }
+  }, []);
+  const handleOpenModal = (cita: any) => {
+    setSelectedCita(cita);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedCita(null);
+  };
+  const handleOpenConfirmModal = () => {
+    setIsConfirmModalOpen(true);
+  };
+
+  const handleCloseConfirmModal = () => {
+    setIsConfirmModalOpen(false);
+  };
+
+  const handleCancelCita = () => {
+    if (selectedCita) {
+      axios
+        .delete(`http://127.0.0.1:8000/citas/${selectedCita.id_cita}/`)
+        .then((response) => {
+          console.log("Cita cancelada con éxito:", response.data);
+          setCitasPendientes(
+            citasPendientes.filter(
+              (cita) => cita.id_cita !== selectedCita.id_cita,
+            ),
+          );
+          handleCloseConfirmModal();
+          handleCloseModal();
+          setShowSuccessAlert(true);
+          setTimeout(() => setShowSuccessAlert(false), 3000);
+        })
+        .catch((error) => {
+          console.error("Error al cancelar la cita:", error);
+        });
+    }
+  };
 
   return (
     <div>
       <NavbarPaciente />
       <main className="flex min-h-screen flex-col items-center justify-center gap-6 px-4 py-8 dark:bg-gray-800 md:flex-row md:px-16 lg:px-24">
-        {/* Content Section */}
+        {showSuccessAlert && (
+          <Alert color="success" className="mb-4">
+            Cita cancelada con éxito.
+          </Alert>
+        )}
+
         <div className="flex-1 text-center md:mr-12 md:text-left">
           <h1 className="mb-6 text-3xl font-semibold dark:text-white md:mb-8">
-            Bienvenid@ <strong>paciente</strong>
+            Bienvenid@{" "}
+            <strong>
+              {paciente.nom} {paciente.ape}
+            </strong>
           </h1>
+
           <h2 className="mb-4 font-normal dark:text-white md:mb-6">
             Qué quieres hacer hoy?
           </h2>
-          <Card className="mx-auto max-w-sm md:mx-0 md:mb-8">
-            <h5 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-              Panel de cita!
-            </h5>
-            <p className="font-normal text-gray-700 dark:text-gray-400">
-              Ooops... Pareces que no tienes citas activas...
-            </p>
-            <Link to="/appoiments">
-              <Button>
+          {Array.isArray(citasPendientes) && citasPendientes.length === 0 ? (
+            <Card className="mx-auto max-w-sm md:mx-0 md:mb-8">
+              <h5 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+                Panel de cita!
+              </h5>
+              <p className="font-normal text-gray-700 dark:text-gray-400">
+                Ooops... Pareces que no tienes citas activas...
+              </p>
+              <Button as={Link} to="/asignacionCita">
                 Pide ahora!
                 <svg
                   className="-mr-1 ml-2 size-4"
@@ -52,74 +163,139 @@ const HomePacientePage: React.FC<PageProps> = () => {
                   />
                 </svg>
               </Button>
-            </Link>
-          </Card>
-          <div className="h-32 sm:h-64 xl:h-96 2xl:h-96">
-            <img src="/images/logo-removebg-preview.png" alt="logo2" />
-          </div>
+            </Card>
+          ) : (
+            <div className="flex flex-wrap gap-4">
+              {citasPendientes.map((cita, index) => (
+                <Card
+                  key={index}
+                  className="w-full flex-none md:w-1/2 lg:w-1/3 xl:w-1/4"
+                >
+                  <h5 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">
+                    Cita pendiente
+                  </h5>
+                  <p className="font-normal text-gray-700 dark:text-gray-400">
+                    <strong>Fecha:</strong> {cita.fecha_cita}
+                    <br />
+                    <strong>Hora:</strong> {cita.hora_cita}
+                    <br />
+                    <strong>Tipo de cita:</strong> {cita.tipo_cita}
+                    <br />
+                    <strong>Servicio:</strong> {cita.id_serv}
+                  </p>
+                  <Button onClick={() => handleOpenModal(cita)}>
+                    Ver
+                    <HiArrowNarrowRight className="ml-2 size-3" />
+                  </Button>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="flex-1 md:max-w-xs">
           <Timeline>
-            <Timeline.Item>
-              <Timeline.Point icon={HiCalendar} />
-              <Timeline.Content>
-                <Timeline.Time>February 2022</Timeline.Time>
-                <Timeline.Title>
-                  Application UI code in Tailwind CSS
-                </Timeline.Title>
-                <Timeline.Body>
-                  Get access to over 20+ pages including a dashboard layout,
-                  charts, kanban board, calendar, and pre-order E-commerce &
-                  Marketing pages.
-                </Timeline.Body>
-                <Button color="gray">
-                  Learn More
-                  <HiArrowNarrowRight className="ml-2 size-3" />
-                </Button>
-              </Timeline.Content>
-            </Timeline.Item>
-            <Timeline.Item>
-              <Timeline.Point icon={HiCalendar} />
-              <Timeline.Content>
-                <Timeline.Time>March 2022</Timeline.Time>
-                <Timeline.Title>Marketing UI design in Figma</Timeline.Title>
-                <Timeline.Body>
-                  All of the pages and components are first designed in Figma
-                  and we keep a parity between the two versions even as we
-                  update the project.
-                </Timeline.Body>
-                <Button color="gray">
-                  Learn More
-                  <HiArrowNarrowRight className="ml-2 size-3" />
-                </Button>
-              </Timeline.Content>
-            </Timeline.Item>
-            <Timeline.Item>
-              <Timeline.Point icon={HiCalendar} />
-              <Timeline.Content>
-                <Timeline.Time>April 2022</Timeline.Time>
-                <Timeline.Title>
-                  E-Commerce UI code in Tailwind CSS
-                </Timeline.Title>
-                <Timeline.Body>
-                  Get started with dozens of web components and interactive
-                  elements built on top of Tailwind CSS.
-                </Timeline.Body>
-                <Button color="gray">
-                  Learn More
-                  <HiArrowNarrowRight className="ml-2 size-3" />
-                </Button>
-              </Timeline.Content>
-            </Timeline.Item>
+            {historial.map((cita, index) => (
+              <Timeline.Item key={index}>
+                <Timeline.Point icon={HiCalendar} />
+                <Timeline.Content>
+                  <Timeline.Time>{cita.fecha_cita}</Timeline.Time>
+                  {cita.historia ? (
+                    <>
+                      <Timeline.Title>
+                        Motivo: {cita.historia.motivo_consulta}
+                      </Timeline.Title>
+                      <Timeline.Body>
+                        <strong>Diagnóstico:</strong>{" "}
+                        {cita.historia.diagnostico}
+                        <br />
+                        <strong>Observaciones:</strong>{" "}
+                        {cita.historia.observaciones}
+                        <br />
+                      </Timeline.Body>
+                    </>
+                  ) : (
+                    <Timeline.Title>No hay historia disponible</Timeline.Title>
+                  )}
+                  <Button color="gray" onClick={() => handleOpenModal(cita)}>
+                    Learn More
+                    <HiArrowNarrowRight className="ml-2 size-3" />
+                  </Button>
+                </Timeline.Content>
+              </Timeline.Item>
+            ))}
           </Timeline>
         </div>
       </main>
       <FooterComponent />
+
+      <Modal show={isModalOpen} onClose={handleCloseModal}>
+        <Modal.Header>Cita Detalles</Modal.Header>
+        <Modal.Body>
+          {selectedCita ? (
+            <div>
+              <p>
+                <strong>Fecha:</strong> {selectedCita.fecha_cita}
+              </p>
+              <p>
+                <strong>Hora:</strong> {selectedCita.hora_cita}
+              </p>
+              <p>
+                <strong>Tipo de cita:</strong> {selectedCita.tipo_cita}
+              </p>
+              <p>
+                <strong>Servicio:</strong> {selectedCita.id_serv}
+              </p>
+
+              {selectedCita.historia ? (
+                <div>
+                  <p>
+                    <strong>Motivo de consulta:</strong>{" "}
+                    {selectedCita.historia.motivo_consulta}
+                  </p>
+                  <p>
+                    <strong>Diagnóstico:</strong>{" "}
+                    {selectedCita.historia.diagnostico}
+                  </p>
+                  <p>
+                    <strong>Observaciones:</strong>{" "}
+                    {selectedCita.historia.observaciones}
+                  </p>
+                </div>
+              ) : (
+                <p>No hay historia disponible para esta cita.</p>
+              )}
+            </div>
+          ) : (
+            <p>Cargando detalles de la cita...</p>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button color="failure" onClick={handleOpenConfirmModal}>
+            Cancelar cita
+          </Button>
+          <Button color="gray" onClick={handleCloseModal}>
+            Cerrar
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      <Modal show={isConfirmModalOpen} onClose={handleCloseConfirmModal}>
+        <Modal.Header>Confirmar Cancelación</Modal.Header>
+        <Modal.Body>
+          <p>¿Estás seguro que deseas cancelar esta cita?</p>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button color="failure" onClick={handleCancelCita}>
+            Sí, cancelar
+          </Button>
+          <Button color="gray" onClick={handleCloseConfirmModal}>
+            No, cerrar
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };
 
 export default HomePacientePage;
-
-export const Head: HeadFC = () => <title>Iniciar sesión</title>;

@@ -7,7 +7,6 @@ export const ClearCookiesButton = () => {
     Cookies.remove('user_role');
     Cookies.remove('isAuthenticated');
     console.log('Cookies eliminadas');
-    alert('Cookies eliminadas');
     window.location.reload();
   };
 
