@@ -19,7 +19,7 @@ const AsignacionCitasPage: React.FC = () => {
   const [servicioSeleccionado, setServicioSeleccionado] = useState(null);
   const [servicios, setServicios] = useState([]);
   const [intervaloSeleccionado, setIntervaloSeleccionado] = useState("");
-  const [showAlert, setShowAlert] = useState(false); // Nuevo estado para la alerta
+  const [showAlert, setShowAlert] = useState(false);
 
   const formatearFecha = (date: Date | null) => {
     if (!date) return null;
@@ -76,7 +76,7 @@ const AsignacionCitasPage: React.FC = () => {
         id_cita: selectedCita.id_cita,
         tipo_cita: tipoConsulta,
         fecha_cita: selectedCita.fecha,
-        hora_cita: intervaloSeleccionado, // Usa el intervalo seleccionado para la hora
+        hora_cita: intervaloSeleccionado,
         est_cita: true,
         id_pac: Cookies.get("user_id"),
         id_odont: selectedCita.id_odont,
@@ -89,7 +89,7 @@ const AsignacionCitasPage: React.FC = () => {
         .then((response) => {
           console.log("Cita solicitada con éxito:", response.data);
           setShowModal(false);
-          setShowAlert(true); // Muestra la alerta
+          setShowAlert(true);
         })
         .catch((error) => {
           console.error("Error al solicitar la cita:", error);
@@ -107,7 +107,7 @@ const AsignacionCitasPage: React.FC = () => {
   return (
     <div>
       <NavbarPaciente />
-      <main className="flex min-h-screen flex-col items-center justify-center px-4 py-8">
+      <main className="flex min-h-screen flex-col items-center justify-center px-4 py-8  dark:bg-gray-800  md:px-16 lg:px-24">
         <div className="mt-8 w-full overflow-x-auto">
           <div className="flex flex-nowrap gap-4">
             {citasDisponibles.length > 0 ? (
@@ -154,15 +154,17 @@ const AsignacionCitasPage: React.FC = () => {
                 </div>
               ))
             ) : (
-              <center>
-                <p>No hay citas disponibles para la fecha seleccionada.</p>
-              </center>
+              <div className="flex w-full justify-center">
+                <p className="dark:text-white">
+                  No hay citas disponibles para la fecha seleccionada.
+                </p>
+              </div>
             )}
           </div>
         </div>
         <br />
         <br />
-        <h1 className="text-3xl font-semibold">
+        <h1 className="text-3xl font-semibold dark:text-white">
           Asignación de Citas <br />
           <br />
         </h1>
