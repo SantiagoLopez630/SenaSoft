@@ -138,7 +138,7 @@ class CitaViewSet(viewsets.ModelViewSet):
                 
                 if not ocupado:
                     intervalos_disponibles.append(hora_actual.time())
-                hora_actual += timedelta(minutes=15)
+                hora_actual += timedelta(minutes=20)
 
             data.append({
                 'doctor': odontologo.nom,
