@@ -12,13 +12,12 @@ export function LoginComponent() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Efecto para redirigir si ya está autenticado
   useEffect(() => {
     const isAuthenticated = Cookies.get('isAuthenticated');
     if (isAuthenticated === 'true') {
       navigate("/homePaciente");
     }
-  }, []);  // Se ejecuta una sola vez al montar el componente
+  }, []); 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +32,6 @@ export function LoginComponent() {
 
       console.log("Inicio de sesión exitoso:", response.data);
 
-      // Guardar el estado de autenticación en las cookies
       Cookies.set("isAuthenticated", "true", { expires: 1 });
       Cookies.set("user_id", response.data.id, { expires: 1 });
       Cookies.set("user_role", response.data.rol, { expires: 1 });

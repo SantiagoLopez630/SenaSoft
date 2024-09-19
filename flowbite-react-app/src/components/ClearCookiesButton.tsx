@@ -8,7 +8,7 @@ export const ClearCookiesButton = () => {
     Cookies.remove('isAuthenticated');
     console.log('Cookies eliminadas');
     alert('Cookies eliminadas');
-    window.location.reload(); // Recarga la página después de eliminar las cookies
+    window.location.reload();
   };
 
   return (
