@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { HeadFC } from "gatsby";
 import { Button, Card, Modal, Select, Alert } from "flowbite-react";
 import { NavbarPaciente } from "../components/Navbar/NavbarPaciente";
 import { FooterComponent } from "../components/FooterComponent";

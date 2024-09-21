@@ -84,8 +84,12 @@ export function NavbarPaciente() {
         <Navbar.Link as={Link} to="/asignacionCita">
           Asignación de Citas
         </Navbar.Link>
-        <Navbar.Link href="#">Servicios</Navbar.Link>
-        <Navbar.Link href="#">Contacto</Navbar.Link>
+        <Navbar.Link as={Link} to="/servicesPaciente">
+          Servicios
+        </Navbar.Link>
+        <Navbar.Link as={Link} to="/contactPaciente">
+          Contacto
+        </Navbar.Link>
       </Navbar.Collapse>
     </Navbar>
   );
