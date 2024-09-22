@@ -2,9 +2,9 @@
 
 import { Button } from "flowbite-react";
 import React, { useState, useEffect } from "react";
-import axios from 'axios'; 
-import { navigate } from "gatsby"; 
-import Cookies from 'js-cookie'; 
+import axios from "axios";
+import { navigate } from "gatsby";
+import Cookies from "js-cookie";
 
 export function LoginComponent() {
   const [docNumber, setDocNumber] = useState("");
@@ -13,11 +13,11 @@ export function LoginComponent() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const isAuthenticated = Cookies.get('isAuthenticated');
-    if (isAuthenticated === 'true') {
+    const isAuthenticated = Cookies.get("isAuthenticated");
+    if (isAuthenticated === "true") {
       navigate("/homePaciente");
     }
-  }, []); 
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,10 +25,13 @@ export function LoginComponent() {
     setError("");
 
     try {
-      const response = await axios.post("http://127.0.0.1:8000/login_paciente/", {
-        nro_doc: docNumber,
-        contrasena: password,
-      });
+      const response = await axios.post(
+        "http://127.0.0.1:8000/login_paciente/",
+        {
+          nro_doc: docNumber,
+          contrasena: password,
+        },
+      );
 
       console.log("Inicio de sesión exitoso:", response.data);
 
@@ -114,7 +117,7 @@ export function LoginComponent() {
         <hr className="grow border-gray-500 dark:border-gray-700" />
       </div>
 
-      <Button color="light" className="mb-4 w-full" href="/register">
+      <Button color="light" className="mb-4 w-full" href="/createAccount">
         Crear cuenta
       </Button>
 

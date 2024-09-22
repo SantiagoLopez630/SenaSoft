@@ -1,11 +1,20 @@
-// src/pages/servicesPaciente.tsx
-import React from "react";
-import { HeadFC, PageProps } from "gatsby";
+import React, { useEffect } from "react";
+import { HeadFC, PageProps, navigate } from "gatsby";
 import { NavbarPaciente } from "../components/Navbar/NavbarPaciente";
 import { FooterComponent } from "../components/FooterComponent";
 import { ServicesComponent } from "../components/ServicesComponent";
+import Cookies from "js-cookie";
 
 const ServicesPage: React.FC<PageProps> = () => {
+  useEffect(() => {
+    const isAuthenticated = Cookies.get("isAuthenticated");
+    const userRole = Cookies.get("user_role");
+
+    if (!isAuthenticated || userRole !== "Paciente") {
+      navigate("/login");
+    }
+  }, []);
+
   return (
     <>
       <NavbarPaciente />

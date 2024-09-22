@@ -31,7 +31,7 @@ export function NavbarPaciente() {
 
   return (
     <Navbar fluid rounded>
-      <Navbar.Brand href="https://flowbite-react.com">
+      <Navbar.Brand as={Link} to="/homePaciente">
         <img
           src="/images/logo_OdontoNet.png"
           className="mr-3 h-6 sm:h-9"

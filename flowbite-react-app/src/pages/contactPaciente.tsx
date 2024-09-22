@@ -1,9 +1,19 @@
-import React from "react";
-import { HeadFC, PageProps } from "gatsby";
+import React, { useEffect } from "react";
+import { HeadFC, PageProps, navigate } from "gatsby";
 import { FooterComponent } from "../components/FooterComponent";
 import { NavbarPaciente } from "../components/Navbar/NavbarPaciente";
+import Cookies from "js-cookie";
 
 const ContactPacientePage: React.FC<PageProps> = () => {
+  useEffect(() => {
+    const isAuthenticated = Cookies.get("isAuthenticated");
+    const userRole = Cookies.get("user_role");
+
+    if (!isAuthenticated || userRole !== "Paciente") {
+      navigate("/login");
+    }
+  }, []);
+
   return (
     <div>
       <NavbarPaciente />
